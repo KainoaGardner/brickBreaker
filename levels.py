@@ -16,4 +16,3 @@ for r in range(20):
         level1.append([None] * 20)
 
 
-print(level1)

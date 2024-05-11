@@ -42,12 +42,64 @@ class Ball:
                 pygame.draw.circle(screen,self.color,(xPos,yPos),randint(1,10))
 
 
+    def checkinBoard(self,board): 
+        if self.bounceCounter >= 0 or True:
+            pos = (self.x,self.y)
+            if 0 <= pos[1] < len(board.board) * board.blockHeight and 0 < pos[0] < WIDTH:
+                return True
+        return False
+
+    def checkHoriCollision(self,board):
+        if self.checkinBoard(board):
+            tile = (self.x // board.blockWidth, self.y // board.blockHeight)
+            block = board.board[tile[1]][tile[0]]
+            if block:
+                board.board[tile[1]][tile[0]] = None
+                if self.xVel > 0:
+                    self.x = tile[0] * board.blockWidth
+                else:
+                    self.x = (tile[0] + 1) * board.blockWidth 
+                self.xVel *= -1
+                board.score += 1
+
+                # board.brokenBlocks.append(block)
+                # block.explosionPos = (tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockWidth // 2)
+                for _ in range(randint(1,5)):
+                    board.particles.append(Particle(block.color,tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockWidth // 2,randint(15,15),randint(15,15),randint(-10,10),(randint(-10,10))))
+
+            self.bounceCounter = 0
+                
 
 
-    def update(self):
-        self.bounceCounter += 1
-        self.x += self.speed * self.xVel
+    def checkVertCollision(self,board):
+        if self.checkinBoard(board):
+            tile = (self.x // board.blockWidth, self.y // board.blockHeight)
+            block = board.board[tile[1]][tile[0]]
+            if block:
+                board.board[tile[1]][tile[0]] = None
+                if self.yVel > 0:
+                    self.y = tile[1] * board.blockHeight
+                else:
+                    self.y = (tile[1] + 1) * board.blockHeight
+
+                self.yVel *= -1
+                board.score += 1
+                
+                for _ in range(randint(1,5)):
+                    board.particles.append(Particle(block.color,tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockWidth // 2,randint(15,15),randint(15,15),randint(-10,10),(randint(-10,10))))
+
+                # board.brokenBlocks.append(block)
+                # block.explosionPos = (tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockWidth // 2)
+
+                
+                
+            self.bounceCounter = 0
+
+    def update(self,board):
         self.y += self.speed * self.yVel
+        self.checkVertCollision(board)
+        self.x += self.speed * self.xVel
+        self.checkHoriCollision(board)
 
         if self.x - self.size // 2 < 0 or self.x + self.size // 2 > WIDTH:
             self.xVel *= -1
@@ -56,17 +108,12 @@ class Ball:
         if self.y + self.size // 2 > HEIGHT and not self.dead:
             self.kill()
 
-    
-    # def checkCollison(self,pos,size):
-    #     if pos[0] < self.x - self.size // 2 and self.x + self.size // 2 < pos[0] + size[0]:
-    #         if pos[1] < self.y - self.size // 2 and self.y + self.size // 2 < pos[1] + size[1]:
-    #             return True
-    #     return False
-
+        self.bounceCounter += 1 
 
     def display(self,screen):
         self.explode(screen)
         pygame.draw.circle(screen,self.color,(self.x,self.y),self.size)
+        
 
         
 
@@ -110,6 +157,9 @@ class Board:
         self.blockWidth = WIDTH // len(self.board[0])
         self.blockAmount = self.getBlockAmount()
         self.brokenBlocks = []
+        self.particles = []
+        # self.startScore = self.getScore()
+        self.score = 0
 
     def getBlockAmount(self):
         count = 0
@@ -127,13 +177,36 @@ class Board:
                 self.brokenBlocks.pop(i)
 
             
+    # def getScore(self):
+    #     score = 0
+    #     for row in range(len(self.board)):
+    #         for col in range(len(self.board[row])):
+    #             block = self.board[row][col]
+    #             if block:
+    #                 score += 1
+    #
+    #     return score
+    #      
+    def displayParticles(self,screen):
+        # spawnParticle = randint(0,1)
+        # if spawnParticle == 0:
+        #     self.particles.append(Particle(RED,100,100,randint(15,15),randint(15,15),randint(-10,10),(randint(-10,10))))
+            # self.particles.append(Particle(RED,100,100,randint(1,15),randint(-10,10),(randint(-10,10))))
+
+        for i in range(len(self.particles)-1,-1,-1):
+            particle = self.particles[i]
+            if particle.y > HEIGHT:
+                self.particles.pop(i)
+
+            particle.display(screen)
 
     def display(self,screen):
         self.update(screen)
+        self.displayParticles(screen)
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
                 block = self.board[row][col]
-                if block:
+                if block: 
                     pygame.draw.rect(screen,block.color, (col * self.blockWidth,row * self.blockHeight,self.blockWidth,self.blockHeight))
                     pygame.draw.rect(screen,BLACK, (col * self.blockWidth,row * self.blockHeight,self.blockWidth,self.blockHeight),3)
 
@@ -156,4 +229,27 @@ class Block:
 
         
 
+class Particle():
+    def __init__(self,color,x,y,width,height,xVel,yVel):
+        self.color = color
+        self.x = x
+        self.y =y 
+        self.width = width
+        self.height = height
+        # self.size = size
+        self.xVel = xVel
+        self.yVel = yVel
+
+    def update(self):
+        self.x += self.xVel
+        self.y += self.yVel
+
+        self.yVel += 1
+
+    def display(self,screen):
+        self.update()
+        pygame.draw.rect(screen,self.color,(self.x,self.y,self.width,self.height))
+        # pygame.draw.circle(screen,self.color,(self.x,self.y),self.size)
+
+    
 
