@@ -12,6 +12,9 @@ GREEN = "#2ecc71"
 BLUE = "#3498db" 
 PURPLE = "#9b59b6"
 WHITE = "#ecf0f1"
+TILEGRAY = "#7f8c8d"
 
+LIGHTGRAY = "#575757"
 GRAY = "#bdc3c7"
 BLACK = "#2f2f2f"
+

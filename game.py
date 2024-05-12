@@ -3,6 +3,8 @@ import math
 from random import randint
 from settings import *
 
+pygame.font.init()
+
 class Ball:
     def __init__(self,x,y,speed,size,color):
         self.x = x
@@ -61,6 +63,8 @@ class Ball:
                     self.x = (tile[0] + 1) * board.blockWidth 
                 self.xVel *= -1
                 board.score += 1
+                board.text = board.font.render(str(board.score),True,LIGHTGRAY)
+
 
                 # board.brokenBlocks.append(block)
                 # block.explosionPos = (tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockWidth // 2)
@@ -84,6 +88,7 @@ class Ball:
 
                 self.yVel *= -1
                 board.score += 1
+                board.text = board.font.render(str(board.score),True,LIGHTGRAY)
                 
                 for _ in range(randint(1,5)):
                     board.particles.append(Particle(block.color,tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockWidth // 2,randint(15,15),randint(15,15),randint(-10,10),(randint(-10,10))))
@@ -153,13 +158,16 @@ class Bar:
 class Board:
     def __init__(self,board):
         self.board = board
-        self.blockHeight = (HEIGHT - HEIGHT // 3) // len(self.board)
+        self.blockHeight = (HEIGHT - HEIGHT // 2) // len(self.board)
         self.blockWidth = WIDTH // len(self.board[0])
         self.blockAmount = self.getBlockAmount()
         self.brokenBlocks = []
         self.particles = []
+
         # self.startScore = self.getScore()
         self.score = 0
+        self.font = pygame.font.Font("fonts/Lemon.otf",WIDTH // 2)
+        self.text = self.font.render(str(self.score),True,LIGHTGRAY)
 
     def getBlockAmount(self):
         count = 0
@@ -200,9 +208,12 @@ class Board:
 
             particle.display(screen)
 
+    def displayScore(self,screen): 
+        screen.blit(self.text,(WIDTH // 2 - self.text.get_width() // 2,HEIGHT // 2 - self.text.get_height() // 2))
+
     def display(self,screen):
         self.update(screen)
-        self.displayParticles(screen)
+        self.displayScore(screen)
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
                 block = self.board[row][col]
@@ -210,6 +221,7 @@ class Board:
                     pygame.draw.rect(screen,block.color, (col * self.blockWidth,row * self.blockHeight,self.blockWidth,self.blockHeight))
                     pygame.draw.rect(screen,BLACK, (col * self.blockWidth,row * self.blockHeight,self.blockWidth,self.blockHeight),3)
 
+        self.displayParticles(screen)
 
 class Block:
     def __init__(self,color):
@@ -249,6 +261,7 @@ class Particle():
     def display(self,screen):
         self.update()
         pygame.draw.rect(screen,self.color,(self.x,self.y,self.width,self.height))
+        pygame.draw.rect(screen,BLACK,(self.x,self.y,self.width,self.height),3)
         # pygame.draw.circle(screen,self.color,(self.x,self.y),self.size)
 
     

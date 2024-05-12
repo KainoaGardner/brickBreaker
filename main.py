@@ -99,7 +99,7 @@ def main():
     run = True
     ball = Ball(WIDTH // 2,HEIGHT - HEIGHT // 8, 10,10,WHITE)
     bar = Bar(WIDTH // 2 - 50,HEIGHT - HEIGHT // 16,(100,20),10,WHITE)
-    board = Board(level1)
+    board = Board(createLevel())
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -111,6 +111,13 @@ def main():
             ball.y = HEIGHT - HEIGHT // 8
             if ball.explosionCounter > 100:
                 resetBall(ball,bar)
+
+        if board.getBlockAmount() == 0:
+            board.board = createLevel()
+            ball.y = HEIGHT + HEIGHT // 2
+            board.blockHeight = (HEIGHT - HEIGHT // 2) // len(board.board)
+            board.blockWidth = WIDTH // len(board.board[0])
+
 
         checkCollisions(ball,bar)
         display(screen,ball,bar,board)
