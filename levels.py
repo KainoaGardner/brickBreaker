@@ -89,10 +89,21 @@ def level3(height,width):
 
 def level4(height,width):
     level = []
+
+    noPlaceC = defaultdict(bool)
+    for _ in range(randint(1,width // 2)):
+        noPlaceC[randint(0,width - 1)] = True
+
+    noPlaceR = defaultdict(bool)
+    for _ in range(randint(1,height // 2)):
+        noPlaceR[randint(0,height - 1)] = True
+
+
+
     for r in range(height):
         row = []
         for c in range(width):
-            if randint(1,3) <= 1:
+            if c not in noPlaceC:
                 color = randint(0,10)
                 if color == 0:
                     row.append(Block(colors[randint(0,len(colors) - 1)]))
@@ -100,7 +111,10 @@ def level4(height,width):
                     row.append(Block(TILEGRAY))
             else:
                 row.append(None)
-        level.append(row)
+        if r not in noPlaceR:
+            level.append(row)
+        else:
+            level.append([None] * width)
 
 
     return level
