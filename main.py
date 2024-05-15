@@ -76,7 +76,7 @@ def resetBoard(ball,board):
         ball.y = HEIGHT + HEIGHT // 2
         board.blockHeight = (HEIGHT - HEIGHT // 2) // len(board.board)
         board.blockWidth = WIDTH // len(board.board[0])
-
+        board.brokenBlocks = []
 
 def main():
     run = True

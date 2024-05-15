@@ -9,7 +9,7 @@ def createLevel():
     level = []
 
     choice = randint(0,3)
-    height = randint(8,16)
+    height = randint(6,12)
     width = height
     while WIDTH // width != WIDTH / width:
         width -= 1

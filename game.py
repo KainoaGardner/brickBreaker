@@ -41,30 +41,25 @@ class extraBall:
         return False
 
     def checkHoriCollision(self,board,ball):
-        if self.checkinBoard(board):
-            diagonalSize = math.sqrt((self.size ** 2) * 2)
-            sides = [(self.x - self.size,self.y),(self.x + self.size,self.y),(self.x,self.y - self.size),(self.x,self.y + self.size),(self.x - diagonalSize,self.y- diagonalSize),(self.x - diagonalSize,self.y+ diagonalSize),(self.x + diagonalSize,self.y - diagonalSize),(self.x+ diagonalSize,self.y + diagonalSize)]
-            for side in sides:
-                tile = (int(side[0] // board.blockWidth), int(side[1] // board.blockHeight))
-                if tile[0] < len(board.board[0]) and tile[1] < len(board.board):
-                    block = board.board[tile[1]][tile[0]]
-                    if block:
-                        if self.xVel > 0:
-                            self.x = tile[0] * board.blockWidth
-                        else:
-                            self.x = (tile[0] + 1) * board.blockWidth 
-                        self.xVel *= -1                
+        if self.checkinBoard(board): 
+            tile = (int(self.x // board.blockWidth), int(self.y // board.blockHeight))
+            if tile[0] < len(board.board[0]) and tile[1] < len(board.board):
+                block = board.board[tile[1]][tile[0]]
+                if block:
+                    if self.xVel > 0:
+                        self.x = tile[0] * board.blockWidth
+                    else:
+                        self.x = (tile[0] + 1) * board.blockWidth 
+                    self.xVel *= -1                
 
-                        block.kill(board,tile,ball)
-                        self.bounceCounter = 0
+                    block.kill(board,tile,ball)
+                    self.bounceCounter = 0
 
-                    break
                 
     def checkVertCollision(self,board,ball):
         if self.checkinBoard(board):
-            sides = [(self.x - self.size,self.y),(self.x + self.size,self.y),(self.x,self.y - self.size),(self.x,self.y + self.size)]
-            for side in sides:
-                tile = (int(side[0] // board.blockWidth), int(side[1] // board.blockHeight))
+            tile = (int(self.x // board.blockWidth), int(self.y // board.blockHeight))
+            if tile[0] < len(board.board[0]) and tile[1] < len(board.board):
                 if tile[0] < len(board.board[0]) and tile[1] < len(board.board):
                     block = board.board[tile[1]][tile[0]]
                     if block:
@@ -77,7 +72,6 @@ class extraBall:
     
                         block.kill(board,tile,ball)
                         self.bounceCounter = 0
-                    break
 
                 
     def update(self,board,ball):
@@ -85,14 +79,13 @@ class extraBall:
         self.checkVertCollision(board,ball)
         self.x += self.speed * self.xVel
         self.checkHoriCollision(board,ball)
-
-        if self.x - self.size // 2 < 0 or self.x + self.size // 2 > WIDTH:
+        if self.x - self.size < 0 or self.x + self.size > WIDTH:
             self.xVel *= -1
             self.bounceCounter = 0
-        if self.y - self.size // 2 < 0:
+        if self.y - self.size < 0:
             self.yVel *= -1
             self.bounceCounter = 0
-        if self.y + self.size // 2 > HEIGHT and not self.dead:
+        if self.y + self.size > HEIGHT and not self.dead:
             self.kill()
 
         self.bounceCounter += 1 
@@ -180,19 +173,22 @@ class Board:
             block.redExplode(screen,self,ball)
             block.blueBeam(screen,self,ball)
             block.yellowBeam(screen,self,ball)
-            block.orangeBall(ball)
-            if block.explosionCounter > 60 and block.explosion:
+            block.orangeBall(screen,ball)
+            block.purpleVoid(screen,self,ball)
+            if block.explosionCounter > 45 and block.explosion:
                 block.explosion = False
-                block.beam = False
                 self.brokenBlocks.pop(i)
             if block.explosionCounter > 30 and block.beam:
-                block.explosion = False
                 block.beam = False
                 self.brokenBlocks.pop(i)
-            if block.explosionCounter > 300 and block.bigBall:
-                block.bigBall = False
-                ball.size = ball.backUpSize
-                block.tempCounter = block.explosionCounter
+            if block.explosionCounter > 15 and block.oBall:
+                ball.color = WHITE
+                block.oBall = False
+                self.brokenBlocks.pop(i)
+            if block.explosionCounter > 30 and block.void:
+                block.void = False
+                self.brokenBlocks.pop(i)
+                
             
     def displayParticles(self,screen):
         for i in range(len(self.particles)-1,-1,-1):
@@ -225,8 +221,16 @@ class Block:
         self.beam = False
         self.explosion = False
         self.explosionPos = ()
-        self.bigBall = False
+        self.oBall = False
+        self.void = False
+        self.voidBlocks = []
+        self.voidStart = None
         self.tempCounter = 0
+
+    def makeParticles(self,pos,board,color):
+        for _ in range(randint(1,5)):
+            board.particles.append(Particle(color,pos[0],pos[1],randint(15,15),randint(15,15),randint(-10,10),randint(-10,10)))
+
 
     def kill(self,board,tile,ball):
         board.board[tile[1]][tile[0]] = None
@@ -235,8 +239,14 @@ class Block:
         board.text = board.font.render(str(board.score),True,LIGHTGRAY)
         pos = (tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockHeight // 2)
 
-        for _ in range(randint(1,5)):
-            board.particles.append(Particle(self.color,pos[0],pos[1],randint(15,15),randint(15,15),randint(-10,10),randint(-10,10)))
+        self.makeParticles(pos,board,self.color)
+
+        if ball.color == ORANGE:
+            self.oBallExplode(board,tile,ball) 
+            self.explosionCounter = 0 
+            self.explosionPos = pos
+            self.oBall = True
+
 
         if self.color == RED:
             self.explosionCounter = 0 
@@ -249,11 +259,57 @@ class Block:
         if self.color == GREEN:
             self.greenBall(board,pos)
         if self.color == ORANGE:
-            self.tempCounter = 0
-            self.explosionCounter = 0 
             ball.color = ORANGE
-            self.bigBall = True
-            
+        if self.color == PURPLE:
+            self.void = True
+            self.getVoidBlocks(board,tile)
+
+    def getVoidBlocks(self,board,tile):  
+        self.voidStart = (tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockHeight) 
+        allBlocks = []
+        for r in range(len(board.board)):
+            for c in range(len(board.board[r])):
+                if board.board[r][c]:
+                    allBlocks.append((board.board[r][c],(c * board.blockWidth,r * board.blockHeight)))
+
+
+        choices = randint(1,5)
+        while choices > 0 and len(allBlocks): 
+            choice = randint(0,len(allBlocks) - 1)
+            block = allBlocks.pop(choice)
+            self.voidBlocks.append(block)
+            choices -= 1
+
+
+    def purpleVoid(self,screen,board,ball):
+        if self.void and self.voidBlocks and self.voidStart:  
+            for i in range(len(self.voidBlocks)):
+                block = self.voidBlocks[i]
+                pygame.draw.rect(screen,PURPLE,(block[1][0],block[1][1],board.blockWidth,board.blockHeight),15)
+                target = (block[1][0] + board.blockWidth // 2,block[1][1] + board.blockHeight)
+                dX = target[0] - self.voidStart[0]
+                dY = target[1] - self.voidStart[1]
+                distance = (30 - self.explosionCounter) 
+                if distance > 0:
+                    lineX = dX / distance
+                    lineY = dY / distance                
+                else:
+                    lineX = dX
+                    lineY = dY
+
+                pygame.draw.circle(screen,PURPLE,self.voidStart,30)
+                pygame.draw.line(screen,PURPLE,self.voidStart,(self.voidStart[0] + lineX,self.voidStart[1] + lineY),30)
+
+        if self.explosionCounter > 30:
+            for block in self.voidBlocks:
+                tile = (block[1][0] // board.blockWidth,block[1][1] // board.blockHeight)
+                if board.board[tile[1]][tile[0]]:
+                    self.makeParticles((block[1][0] + board.blockWidth,block[1][1] + board.blockHeight),board,PURPLE)             
+                    block[0].kill(board,tile,ball)     
+
+
+
+
 
     def greenBall(self,board,pos):
         speed = math.sqrt(1 + 1)
@@ -263,22 +319,30 @@ class Block:
             yVel = speed * math.sin(math.degrees(angle))
             board.extraBalls.append(extraBall(pos[0],pos[1], 10,xVel,yVel,10,GREEN))
 
-
-    def orangeBall(self,ball):
-        if ball.dead:
-            self.bigBall = False
-            self.tempCounter = 0
-        if self.bigBall:
-            ball.size = min((self.explosionCounter * self.explosionCounter), 50)
-        elif self.tempCounter:
-            size = (self.explosionCounter % self.tempCounter) ** 2
-            if size >= 50:
-                self.tempCounter = 0
-                ball.color = WHITE
+    def orangeBall(self,screen,ball): 
+        if self.oBall and self.explosionPos:
+            size = (self.explosionCounter * self.explosionCounter)
+            pygame.draw.circle(screen,ORANGE,(ball.x,ball.y),size,25)
             
-            ball.size = max(50 - size, ball.backUpSize)
-         
+            
 
+    def oBallExplode(self,board,tile,ball):
+        self.explosionCounter = 0
+        ball.color = WHITE
+        self.oBall = False 
+
+        pos = (tile[0] * board.blockWidth + board.blockWidth // 2,tile[1] * board.blockHeight + board.blockHeight // 2)
+        self.explosionPos = pos
+        for direction in [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]:
+            newTile = (tile[0] + direction[0],tile[1] + direction[1]) 
+            if newTile[0] < len(board.board[0]) and newTile[1] < len(board.board):
+                block = board.board[newTile[1]][newTile[0]]
+                if block: 
+                    pos = (newTile[0] * board.blockWidth + board.blockWidth // 2,newTile[1] * board.blockHeight + board.blockHeight // 2)
+                    self.makeParticles(pos,board,ORANGE)
+                    block.kill(board,newTile,ball)     
+            
+            
     def blueBeam(self,screen,board,ball):
         if self.explosionPos and self.beam and self.color == BLUE:
             size = min((self.explosionCounter * self.explosionCounter) * 5, HEIGHT)
