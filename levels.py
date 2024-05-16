@@ -1,6 +1,6 @@
 from game import Block
 from settings import *
-from random import choice,randint
+from random import randint
 from collections import defaultdict
 
 colors = [RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE]
@@ -8,7 +8,7 @@ colors = [RED,ORANGE,YELLOW,GREEN,BLUE,PURPLE]
 def createLevel():
     level = []
 
-    choice = randint(0,3)
+    choice = randint(0,4)
     height = randint(6,12)
     width = height
     while WIDTH // width != WIDTH / width:
@@ -23,6 +23,9 @@ def createLevel():
             level = level3(height,width)
         case 3:
             level = level4(height,width)
+        case 4:
+            level = level5(height,width)
+
 
     return level
 
@@ -38,7 +41,8 @@ def level1(height,width):
         row = []
         color = randint(0,5)
         for c in range(width):
-            if not noPlace[r]:
+            placeBlock = randint(0,15) 
+            if not noPlace[r] and placeBlock != 0:
                 color = randint(0,10)
                 if color == 0:
                     row.append(Block(colors[randint(0,len(colors) - 1)]))
@@ -58,7 +62,8 @@ def level2(height,width):
     for r in range(height):
         row = []
         for c in range(width):
-            if not noPlace[c]:
+            placeBlock = randint(0,15) 
+            if not noPlace[c] and placeBlock != 0:
                 color = randint(0,10)
                 if color == 0:
                     row.append(Block(colors[randint(0,len(colors) - 1)]))
@@ -75,7 +80,8 @@ def level3(height,width):
     for r in range(height):
        row = []
        for c in range(width):
-           if randint(1,3) <= 1:
+           placeBlock = randint(0,15) 
+           if randint(1,3) <= 1 and placeBlock != 0:
                color = randint(0,10)
                if color == 0:
                    row.append(Block(colors[randint(0,len(colors) - 1)]))
@@ -103,7 +109,8 @@ def level4(height,width):
     for r in range(height):
         row = []
         for c in range(width):
-            if c not in noPlaceC:
+            placeBlock = randint(0,15) 
+            if c not in noPlaceC and placeBlock != 0:
                 color = randint(0,10)
                 if color == 0:
                     row.append(Block(colors[randint(0,len(colors) - 1)]))
@@ -116,8 +123,30 @@ def level4(height,width):
         else:
             level.append([None] * width)
 
-
     return level
+
+def level5(height,width):
+    level = []
+    for r in range(height):
+       row = []
+       for c in range(width):
+           placeBlock = randint(0,15) 
+           if randint(0,2) <= c < width - randint(0,2) and placeBlock != 0:
+               color = randint(0,10)
+               if color == 0:
+                   row.append(Block(colors[randint(0,len(colors) - 1)]))
+               else:
+                   row.append(Block(TILEGRAY))
+           else:
+               row.append(None)
+
+       if randint(0,2) <= r < width - randint(0,2):
+            level.append(row)
+       else:
+            level.append([None] * width)
+    
+    return level
+
 
 
    # else:
